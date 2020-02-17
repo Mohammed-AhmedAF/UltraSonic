@@ -14,7 +14,7 @@ void vidBuildPulse(void);
 
 volatile u32 u32OVFCount = 0;
 volatile u8 u8Edge = TIMER1_ICP_EDGE_FALLING;
-volatile u16 u16PulseTime = 0;
+volatile u64 u64PulseTime = 0;
 volatile u16 u16FirstEdgeTime = 0;
 volatile u16 u16Timer0OVF = 0;
 volatile u8 u8Display = 0;
@@ -29,17 +29,17 @@ void vidGetPulse(void)
 
 	if (u8Edge == TIMER1_ICP_EDGE_FALLING)
 	{
-		u16FirstEdgeTime = TIMER1_u16GetInputCaptTime();
+
+		u64PulseTime = TIMER1_u16GetInputCaptTime() + (65536*u32OVFCount);		
 		TIMER1_vidSelectInputCaptEdge(TIMER1_ICP_EDGE_RISING);
 		u8Edge = TIMER1_ICP_EDGE_RISING;
-	}
+			}
 	else
 	{
-		u16PulseTime = TIMER1_u16GetInputCaptTime()+(65536-u16FirstEdgeTime) + (65536*u32OVFCount);		
 		TIMER1_vidSelectInputCaptEdge(TIMER1_ICP_EDGE_FALLING);
+		u8Edge = TIMER1_ICP_EDGE_FALLING;
 		TIMER1_vidSetTCNT(0);
 		u32OVFCount = 0;
-		u8Edge = TIMER1_ICP_EDGE_FALLING;
 	}
 
 }
@@ -54,7 +54,7 @@ void vidTrigger(void)
 void vidBuildPulse(void)
 {
 	u16Timer0OVF++;
-	if (u16Timer0OVF == 31500)
+	if (u16Timer0OVF == 3150)
 	{
 		u16Timer0OVF = 0;
 		if (u8Display == 1)
@@ -63,7 +63,7 @@ void vidBuildPulse(void)
 			LCD_vidSendCommand(LCD_RETURN_HOME);
 			LCD_vidWriteString("Distance: ");
 			LCD_vidGoToXY(LCD_XPOS10,LCD_YPOS0);
-			LCD_vidWriteNumber((u16FirstEdgeTime*0.034/2)/10);
+			LCD_vidWriteNumber(u64PulseTime/466);
 			u8Display = 0;
 		}
 		else
